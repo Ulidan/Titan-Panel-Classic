@@ -114,19 +114,14 @@ print("GetAmmoCount"
 )
 --]]
 
-	if IsThrown(ammo_type) then
-		ammo_name = select(1, GetItemInfo(GetInventoryItemID("player", rangedSlotID))) or _G["UNKNOWN"]
+	local slotId = IsThrown(ammo_type) and rangedSlotID or ammoSlotID
+	local itemId = GetInventoryItemID("player", slotId)
+	if itemId then
+		ammo_name = select(1, GetItemInfo(itemId)) or _G["UNKNOWN"]
 		if ammo_name == _G["UNKNOWN"] then
 			ammo_count = 0
 		else
-			ammo_count = GetInventoryItemCount("player", rangedSlotID) or ammo_count
-		end
-	else 
-		ammo_name = select(1, GetItemInfo(GetInventoryItemID("player", ammoSlotID))) or _G["UNKNOWN"]
-		if ammo_name == _G["UNKNOWN"] then
-			ammo_count = 0
-		else
-			ammo_count = GetInventoryItemCount("player", ammoSlotID) or ammo_count
+			ammo_count = GetInventoryItemCount("player", slotId) or ammo_count
 		end
 	end
 end
@@ -163,15 +158,19 @@ function TitanPanelAmmoButton_OnLoad(self)
 			DisplayOnRightSide = false,
 		}
 	};     
-
-	self:SetScript("OnEvent",  function(_, event, arg1, ...)
+	self:SetScript("OnEvent",  function(_, event, ...)
 		if event == "PLAYER_LOGIN" then
 			TitanPanelAmmoButton_PLAYER_LOGIN()
+		elseif event == "PLAYER_ENTERING_WORLD" then
+			local login, reload = ...
+			if login or reload then
+				TitanPanelAmmoButton_MERCHANT_CLOSED()
+			end
 		elseif event == "UNIT_INVENTORY_CHANGED" then
-			TitanPanelAmmoButton_UNIT_INVENTORY_CHANGED(arg1, ...)
+			TitanPanelAmmoButton_UNIT_INVENTORY_CHANGED(...)
 		elseif event == "UPDATE_INVENTORY_DURABILITY" then
 			TitanPanelAmmoButton_UPDATE_INVENTORY_DURABILITY()
-		elseif event == "MERCHANT_CLOSED" or event == "PLAYER_ENTERING_WORLD" then
+		elseif event == "MERCHANT_CLOSED" then
 			TitanPanelAmmoButton_MERCHANT_CLOSED()
 		elseif event == "ACTIONBAR_HIDEGRID" then -- in case ammo is dropped into char slot
 			TitanPanelAmmoButton_ACTIONBAR_HIDEGRID()
@@ -214,7 +213,7 @@ function TitanPanelAmmoButton_UPDATE_INVENTORY_DURABILITY()
 end
 
 function TitanPanelAmmoButton_MERCHANT_CLOSED() 
-	TitanPanelAmmoUpdateDisplay(); 	
+	TitanPanelAmmoUpdateDisplay();
 end
 
 function TitanPanelAmmoButton_ACTIONBAR_HIDEGRID()
